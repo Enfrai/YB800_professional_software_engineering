@@ -1,9 +1,10 @@
-# Develop a Python project that includes a "main" function and at least two additional functions. Your program should:
-# Ask the user to enter a number (N).
-# Print all values in the Fibonacci series up to N.
-# Calculate and print the factorial of N.
-# Once you have completed the project, push it to GitHub and share your GitHub repository link here.
-
+"""
+Develop a Python project that includes a "main" function and at least two additional functions. Your program should:
+Ask the user to enter a number (N).
+Print all values in the Fibonacci series up to N.
+Calculate and print the factorial of N.
+Once you have completed the project, push it to GitHub and share your GitHub repository link here.
+"""
 def print_fibonacci(terminal = 100):
     first = 0
     second = 1
