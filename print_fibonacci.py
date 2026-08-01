@@ -21,4 +21,5 @@ def print_fibonacci(terminal = 100):
     print('')
 
 if __name__ == '__main__':
-    print_fibonacci(1000)
+    maximum = int(input('Please input a maximum number of Fibonacci sequences: '))
+    print_fibonacci(maximum)
