@@ -21,6 +21,21 @@ def print_fibonacci(terminal = 100):
         
     print('')
 
+def calculate_factorial(base: int):
+    if base < 0:
+        print('invalid base')
+
+    result = 1
+    if base > 0:
+        for i in range(1, base + 1):
+            result *= i
+
+    print(f'The factorial of {base} is {result}')
+    
+
 if __name__ == '__main__':
     maximum = int(input('Please input a maximum number of Fibonacci sequences: '))
     print_fibonacci(maximum)
+
+    base = int(input('Please input a base of factorial: '))
+    calculate_factorial(base)
