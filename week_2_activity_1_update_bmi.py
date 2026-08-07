@@ -6,7 +6,7 @@ class BMI:
         self.height = height
 
     def calculate(self) -> float:
-        return self.weight * self.height ** 2
+        return self.weight / self.height ** 2
 
 def main():
     try:

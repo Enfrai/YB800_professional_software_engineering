@@ -53,7 +53,7 @@ def calculate_bmi():
         weight = float(input('Please input the weight(kg): '))
         height = float(input('Please input the height(m): '))
 
-        bmi = weight * height ** 2
+        bmi = weight / height ** 2
         print(f'The BMI is {bmi}')
     except ValueError:
         on_value_error(prompt='Please provide weight and height in FLOAT value', f=calculate_bmi)
