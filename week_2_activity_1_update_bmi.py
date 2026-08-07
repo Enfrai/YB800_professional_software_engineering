@@ -6,7 +6,7 @@ class BMI:
         self.height = height
 
     def calculate(self) -> float:
-        return self.weight / self.height ** 2
+        return round(self.weight / self.height ** 2, 2)
 
 def main():
     try:
@@ -14,7 +14,7 @@ def main():
         height = float(input('Please input the height(m): '))
 
         bmi = BMI(weight, height)
-        print(f'The BMI is {bmi.calculate():.2f}')
+        print(f'The BMI is {bmi.calculate()}')
     except ValueError:
         on_value_error(prompt='Please provide weight and height in FLOAT value', f=main)
 
