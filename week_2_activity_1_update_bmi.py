@@ -14,7 +14,7 @@ def main():
         height = float(input('Please input the height(m): '))
 
         bmi = BMI(weight, height)
-        print(f'The BMI is {bmi.calculate()}')
+        print(f'The BMI is {bmi.calculate():.2f}')
     except ValueError:
         on_value_error(prompt='Please provide weight and height in FLOAT value', f=main)
 
