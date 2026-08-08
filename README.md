@@ -5,7 +5,7 @@ Shuohui Liu (Michael) @YooBee learning
 
 ## Week 2
 - [Transform BMI to class](week_2_activity_1_update_bmi.py)
-- [Optimized bmi calculation (Use `self` instead of `this')](week_2_activity_1_2_optimisation_bmi.py)
+- [Optimized bmi calculation (Use `self` instead of `this`)](week_2_activity_1_2_optimisation_bmi.py)
     ```
     Actually, no matter self or this, both have same running because self is not a reserved keyword in Python, just as a commonly definition.
     ```
