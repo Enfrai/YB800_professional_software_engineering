@@ -21,6 +21,6 @@ Shuohui Liu (Michael) @YooBee learning
 - [Week 2 - Activity 5: Develop an OOP python project - temperature convertor - Due date: 8:00 AM -15 Aug 2026](week_2_activity_5_temperature_convertor.py)
 
     **Activity descriptions:**
-    ![screenshot](images/25d6be4cb33a2ecd6c273c0c1e35b202.jpg)
+    ![screenshot](images/w2_activity5_description.png)
     **Testing result:**
-    ![screenshot](images/dc450e176c750ac73fcd17ee8680c677.jpg)
+    ![screenshot](images/w2_activity5_testing_result.png)
