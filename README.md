@@ -42,3 +42,12 @@ Shuohui Liu (Michael) @YooBee learning
     3. Convert all text in the `junk.txt` file to lowercase.
     4. Save the processed file. Share your GitHub repository link here once you have completed the task.
     ```
+
+- [Week 3 - Activity 3: Describe ER](week_3_activity_3_describe_er)
+    ```
+    Describe a scenario in one or two paragraphs in short the below ER and answer the following question based on your understanding and your own words and answer below quetions:
+    add more one/ two attributes for any of the entities?
+    Write the type of relationship between the entities and describe it.
+    Share your file using the GitHub link.
+    ```
+    ![ER-Sample](images/ER-sample.png)
