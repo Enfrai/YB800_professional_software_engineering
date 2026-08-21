@@ -4,8 +4,8 @@ class Logger:
 
     @staticmethod
     def d(*log: object):
-        print("[DEBUG]: " + log)
+        print("[DEBUG]: ", log)
 
     @staticmethod
     def e(*log: object):
-        print("[!!ERROR]: " + log)
+        print("[!!ERROR]: ", log)

@@ -1,8 +1,8 @@
 from sqlite3 import Connection
 import sqlite3
-from database import TABLE_STUDENT, create_connection
+from .database import TABLE_STUDENT, create_connection
 import re
-from lib.logger import Logger
+from ..logger import Logger
 
 FIRST_NAME = 'F_name'   # CHAR(30)
 LAST_NAME = 'L_name'    # CHAR(30)
@@ -14,22 +14,20 @@ class Student:
     _conn: Connection = None
 
     def __init__(self):
-        pass
+        self._conn = create_connection()
 
     def create_table(self, conn:Connection=None):
-        if None == conn:
-            raise ValueError('A sqlite3 connection is needed.')
-
-        self._conn = conn
+        if None != conn:
+            self._conn = conn
 
         cursor = conn.cursor()
-        sql = f'CREATE TABLE IF NOT EXISTS {TABLE_STUDENT} (' \
-            f'{NID} INTEGER PRIMARY KEY AUTOINCREMENT,' \
-            f'{FIRST_NAME} CHAR(30) NOT NULL,' \
-            f'{LAST_NAME} CHAR(30) NOT NULL,' \
-            f'{BIRTHDATE} CHAR(10)', \
-            f'{EMAIL} TEXT NOT NULL UNIQUE' \
-        ')'
+        sql = f'''CREATE TABLE IF NOT EXISTS {TABLE_STUDENT} (
+                    {NID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {FIRST_NAME} CHAR(30) NOT NULL,
+                    {LAST_NAME} CHAR(30) NOT NULL,
+                    {BIRTHDATE} CHAR(10),
+                    {EMAIL} TEXT NOT NULL UNIQUE
+        )'''
         cursor.execute(sql)
         conn.commit()
 
@@ -40,10 +38,10 @@ class Student:
         if last_name == None or len(last_name) > 30:
             raise ValueError('Last name cannot be none or longer than 30.')
 
-        if b_date != None and not re.match(r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"):
+        if b_date != None and not re.match(r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$", b_date):
              raise ValueError('Invalid birthdate, please input again by DD/MM/YYYY.')
 
-        if email == None or not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"):
+        if email == None or not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email):
             raise ValueError('Invalid email address, please input again.')
 
         # all values checked ok, insert them into table.
@@ -65,16 +63,16 @@ class Student:
 
     def delete(self, id: int = -1):
         if id < 0:
-            raise ValueError('NID or email has to be provided.')
+            raise ValueError('NID has to be provided.')
 
         if self._conn == None:
             raise ValueError('No connection established.')
 
         cursor = self._conn.cursor()
-        cursor.execute(f'DELETE from {TABLE_STUDENT} where id = ?', (id))
+        cursor.execute(f'DELETE from {TABLE_STUDENT} where {NID} = ?', (id,))
         self._conn.commit()
 
-    def all_users(self):
+    def all_students(self):
         if self._conn == None:
             raise ValueError('No connection established.')
 
@@ -91,5 +89,6 @@ class Student:
             raise ValueError('No connection established.')
 
         cursor = self._conn.cursor()
-        cursor.execute(f'SELECT * from {TABLE_STUDENT} where id = ?', (id))
+        cursor.execute(f'SELECT * from {TABLE_STUDENT} where {NID} = ?', (id,))
         rows = cursor.fetchall()
+        return rows
