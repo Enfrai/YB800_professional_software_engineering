@@ -43,7 +43,7 @@ Shuohui Liu (Michael) @YooBee learning
     4. Save the processed file. Share your GitHub repository link here once you have completed the task.
     ```
 
-- [Week 3 - Activity 3: Describe ER](week_3_activity_3_describe_er)
+- [Week 3 - Activity 3: Describe ER](week_3_activity_3_describe_er/DESCRIPTION.md)
     ```
     Describe a scenario in one or two paragraphs in short the below ER and answer the following question based on your understanding and your own words and answer below quetions:
     add more one/ two attributes for any of the entities?
@@ -51,3 +51,17 @@ Shuohui Liu (Michael) @YooBee learning
     Share your file using the GitHub link.
     ```
     ![ER-Sample](images/ER-sample.png)
+
+- [Week 3 - Activity 4: SQLite3 project](week_3_activity_3_describe_er/db/)
+    ```
+    Develop a database project based on the ER diagram created in W3-A3. Review and update the ER diagram if necessary before implementing the database and you can use the sample code in your Blackboard.
+    Populate the database with the following sample data:
+        - 3 courses
+        - 2 lecturers
+        - 5 students
+    Appropriate enrolment records for the students
+    Any additional records required for the other entities/tables in your ER diagram
+    Once the database has been developed and populated, use SQL queries to answer the following questions:
+    How many students are registered in each course?
+    List the names and student IDs of students who have enrolled in more than one course.
+    ```

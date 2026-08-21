@@ -3,6 +3,7 @@ According to the ER diagram, it describes a relation in which a `Student` enrols
 - add more one/ two attributes for any of the entities?
     - The entity `Lecture` should have an attribute `Lecture_id` refers to which `Lecturer` will teach in the lecture. And
     - The entity `Subjects` should have an attribute `Subject_name`.
+    - The entity `Student` should have an attribute `S_email`.
     - The attribute `Subject` of the entity `Lecture` should be changed to `Subject_code`
 
 - Write the type of relationship between the entities and describe it.
