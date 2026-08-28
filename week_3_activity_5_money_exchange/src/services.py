@@ -1,97 +1,63 @@
-from .models import Customer, ExchangeRate, ExchangeTransaction
+"""
+services.py
+-----------
+Business logic layer. ExchangeService coordinates the four repositories to
+perform a real-world action: "exchange currency X for currency Y for this
+customer" - without any of the repositories needing to know about each other.
+"""
+
+from .database import Database
+from .models import Transaction
 from .repositories import (
     CustomerRepository,
     CurrencyRepository,
     ExchangeRateRepository,
-    ExchangeTransactionRepository,
+    TransactionRepository,
 )
 
 
-class MoneyExchangeService:
-    """Provide business operations for the money exchange system."""
+class CurrencyNotFoundError(Exception):
+    pass
 
-    def __init__(self, db):
+
+class CustomerNotFoundError(Exception):
+    pass
+
+
+class RateNotAvailableError(Exception):
+    pass
+
+
+class ExchangeService:
+    def __init__(self, db: Database):
+        self.db = db
         self.customers = CustomerRepository(db)
         self.currencies = CurrencyRepository(db)
         self.rates = ExchangeRateRepository(db)
-        self.transactions = ExchangeTransactionRepository(db)
+        self.transactions = TransactionRepository(db)
 
-    def create_customer(self, first_name, last_name, email, phone=None):
-        """Create and persist a customer."""
-        customer = Customer(first_name, last_name, email, phone)
-        return self.customers.create(customer)
-
-    def add_exchange_rate(self, base_code, target_code, rate):
-        """Create a new exchange rate for a currency pair."""
-        if rate <= 0:
-            raise ValueError("Exchange rate must be greater than zero.")
-
-        base = self.currencies.find_by_code(base_code)
-        target = self.currencies.find_by_code(target_code)
-
-        if not base or not target:
-            raise ValueError("Both currencies must exist.")
-
-        if base.currency_id == target.currency_id:
-            raise ValueError("Base and target currencies must be different.")
-
-        exchange_rate = ExchangeRate(
-            base_currency_id=base.currency_id,
-            target_currency_id=target.currency_id,
-            rate=rate,
-        )
-        return self.rates.create(exchange_rate)
-
-    def calculate_exchange(self, amount, rate):
-        """Calculate the target amount for a given source amount and rate."""
-        if amount <= 0:
-            raise ValueError("Amount must be greater than zero.")
-        if rate <= 0:
-            raise ValueError("Exchange rate must be greater than zero.")
-        return round(amount * rate, 2)
-
-    def record_exchange(
-        self,
-        customer_id,
-        rate_id,
-        source_code,
-        target_code,
-        source_amount,
-        transaction_type="BUY",
-    ):
-        """Calculate and persist a completed exchange transaction."""
-        source = self.currencies.find_by_code(source_code)
-        target = self.currencies.find_by_code(target_code)
-        rate = self.rates.find_by_id(rate_id)
-        customer = self.customers.find_by_id(customer_id)
-
+    def perform_exchange(self, customer_id: int, from_code: str,
+                          to_code: str, amount: float) -> Transaction:
+        customer = self.customers.get_by_id(customer_id)
         if not customer:
-            raise ValueError("Customer does not exist.")
-        if not source or not target:
-            raise ValueError("Both currencies must exist.")
+            raise CustomerNotFoundError(f"No customer with id {customer_id}")
+
+        from_currency = self.currencies.get_by_code(from_code)
+        to_currency = self.currencies.get_by_code(to_code)
+        if not from_currency or not to_currency:
+            raise CurrencyNotFoundError("One or both currency codes do not exist.")
+
+        rate = self.rates.get_latest_rate(from_currency.currency_id, to_currency.currency_id)
         if not rate:
-            raise ValueError("Exchange rate does not exist.")
+            raise RateNotAvailableError(
+                f"No exchange rate available for {from_code} -> {to_code}"
+            )
 
-        if (
-            rate.base_currency_id != source.currency_id
-            or rate.target_currency_id != target.currency_id
-        ):
-            raise ValueError("The exchange rate does not match the currency pair.")
-
-        target_amount = self.calculate_exchange(source_amount, rate.rate)
-
-        transaction = ExchangeTransaction(
-            customer_id=customer_id,
-            rate_id=rate_id,
-            source_currency_id=source.currency_id,
-            target_currency_id=target.currency_id,
-            source_amount=source_amount,
-            exchange_rate=rate.rate,
-            target_amount=target_amount,
-            transaction_type=transaction_type,
+        txn = Transaction(
+            customer_id=customer.customer_id,
+            from_currency_id=from_currency.currency_id,
+            to_currency_id=to_currency.currency_id,
+            amount_from=amount,
+            rate_applied=rate.rate,
         )
-        return self.transactions.create(transaction)
-
-    def get_customer_history(self, customer_id):
-        """Return all exchanges belonging to a customer."""
-        return self.transactions.find_by_customer(customer_id)
+        return self.transactions.create(txn)

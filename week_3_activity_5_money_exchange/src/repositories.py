@@ -1,162 +1,149 @@
-from .models import Customer, Currency, ExchangeRate, ExchangeTransaction
-from typing import Optional
+"""
+repositories.py
+----------------
+Repository pattern: one repository class per table, each responsible for
+all SQL/CRUD operations for its entity. This keeps SQL isolated from
+business logic (services.py) and from the plain entity classes (models.py).
+"""
+
+from abc import ABC, abstractmethod
+from typing import List, Optional
+
+from .database import Database
+from .models import Customer, Currency, ExchangeRate, Transaction
 
 
-class CustomerRepository:
-    """Provide CRUD operations for customers."""
+class BaseRepository(ABC):
+    """Shared behaviour for all repositories."""
 
-    def __init__(self, db):
+    def __init__(self, db: Database):
         self.db = db
 
+    @abstractmethod
+    def create(self, entity):
+        ...
+
+    @abstractmethod
+    def get_all(self) -> List:
+        ...
+
+
+class CustomerRepository(BaseRepository):
     def create(self, customer: Customer) -> Customer:
-        with self.db.connect() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO customers (first_name, last_name, email, phone)
-                VALUES (?, ?, ?, ?)
-                """,
-                (customer.first_name, customer.last_name, customer.email, customer.phone),
-            )
-            customer.customer_id = cursor.lastrowid
+        conn = self.db.connect()
+        cur = conn.execute(
+            """INSERT INTO customers (full_name, email, phone, id_document_number)
+               VALUES (?, ?, ?, ?)""",
+            (customer.full_name, customer.email, customer.phone, customer.id_document_number),
+        )
+        conn.commit()
+        customer.customer_id = cur.lastrowid
         return customer
 
-    def find_by_id(self, customer_id: int) -> Optional[Customer]:
-        with self.db.connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM customers WHERE customer_id = ?",
-                (customer_id,),
-            ).fetchone()
-        return Customer(**dict(row)) if row else None
+    def get_by_id(self, customer_id: int) -> Optional[Customer]:
+        row = self.db.connect().execute(
+            "SELECT * FROM customers WHERE customer_id = ?", (customer_id,)
+        ).fetchone()
+        return Customer.from_row(row) if row else None
 
-    def list_all(self):
-        with self.db.connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM customers ORDER BY customer_id"
-            ).fetchall()
-        return [Customer(**dict(row)) for row in rows]
+    def get_by_email(self, email: str) -> Optional[Customer]:
+        row = self.db.connect().execute(
+            "SELECT * FROM customers WHERE email = ?", (email,)
+        ).fetchone()
+        return Customer.from_row(row) if row else None
+
+    def get_all(self) -> List[Customer]:
+        rows = self.db.connect().execute("SELECT * FROM customers").fetchall()
+        return [Customer.from_row(r) for r in rows]
+
+    def update(self, customer: Customer) -> None:
+        self.db.connect().execute(
+            """UPDATE customers SET full_name=?, email=?, phone=?, id_document_number=?
+               WHERE customer_id=?""",
+            (customer.full_name, customer.email, customer.phone,
+             customer.id_document_number, customer.customer_id),
+        )
+        self.db.connect().commit()
+
+    def delete(self, customer_id: int) -> None:
+        self.db.connect().execute(
+            "DELETE FROM customers WHERE customer_id = ?", (customer_id,)
+        )
+        self.db.connect().commit()
 
 
-class CurrencyRepository:
-    """Provide read and create operations for currencies."""
-
-    def __init__(self, db):
-        self.db = db
-
+class CurrencyRepository(BaseRepository):
     def create(self, currency: Currency) -> Currency:
-        with self.db.connect() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO currencies (code, name, symbol)
-                VALUES (?, ?, ?)
-                """,
-                (currency.code.upper(), currency.name, currency.symbol),
-            )
-            currency.currency_id = cursor.lastrowid
+        conn = self.db.connect()
+        cur = conn.execute(
+            "INSERT INTO currencies (code, name, symbol) VALUES (?, ?, ?)",
+            (currency.code, currency.name, currency.symbol),
+        )
+        conn.commit()
+        currency.currency_id = cur.lastrowid
         return currency
 
-    def find_by_code(self, code: str) -> Optional[Currency]:
-        with self.db.connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM currencies WHERE code = ?",
-                (code.upper(),),
-            ).fetchone()
-        return Currency(**dict(row)) if row else None
+    def get_by_code(self, code: str) -> Optional[Currency]:
+        row = self.db.connect().execute(
+            "SELECT * FROM currencies WHERE code = ?", (code,)
+        ).fetchone()
+        return Currency.from_row(row) if row else None
 
-    def find_by_id(self, currency_id: int) -> Optional[Currency]:
-        with self.db.connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM currencies WHERE currency_id = ?",
-                (currency_id,),
-            ).fetchone()
-        return Currency(**dict(row)) if row else None
-
-    def list_all(self):
-        with self.db.connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM currencies ORDER BY code"
-            ).fetchall()
-        return [Currency(**dict(row)) for row in rows]
+    def get_all(self) -> List[Currency]:
+        rows = self.db.connect().execute("SELECT * FROM currencies").fetchall()
+        return [Currency.from_row(r) for r in rows]
 
 
-class ExchangeRateRepository:
-    """Provide persistence operations for exchange rates."""
-
-    def __init__(self, db):
-        self.db = db
-
+class ExchangeRateRepository(BaseRepository):
     def create(self, rate: ExchangeRate) -> ExchangeRate:
-        with self.db.connect() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO exchange_rates
-                (base_currency_id, target_currency_id, rate, effective_at)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    rate.base_currency_id,
-                    rate.target_currency_id,
-                    rate.rate,
-                    rate.effective_at,
-                ),
-            )
-            rate.rate_id = cursor.lastrowid
+        conn = self.db.connect()
+        cur = conn.execute(
+            """INSERT INTO exchange_rates (from_currency_id, to_currency_id, rate)
+               VALUES (?, ?, ?)""",
+            (rate.from_currency_id, rate.to_currency_id, rate.rate),
+        )
+        conn.commit()
+        rate.rate_id = cur.lastrowid
         return rate
 
-    def find_by_id(self, rate_id: int) -> Optional[ExchangeRate]:
-        with self.db.connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM exchange_rates WHERE rate_id = ?",
-                (rate_id,),
-            ).fetchone()
-        return ExchangeRate(**dict(row)) if row else None
+    def get_latest_rate(self, from_currency_id: int, to_currency_id: int) -> Optional[ExchangeRate]:
+        row = self.db.connect().execute(
+            """SELECT * FROM exchange_rates
+               WHERE from_currency_id = ? AND to_currency_id = ?
+               ORDER BY effective_date DESC LIMIT 1""",
+            (from_currency_id, to_currency_id),
+        ).fetchone()
+        return ExchangeRate.from_row(row) if row else None
+
+    def get_all(self) -> List[ExchangeRate]:
+        rows = self.db.connect().execute("SELECT * FROM exchange_rates").fetchall()
+        return [ExchangeRate.from_row(r) for r in rows]
 
 
-class ExchangeTransactionRepository:
-    """Provide persistence operations for exchange transactions."""
+class TransactionRepository(BaseRepository):
+    def create(self, txn: Transaction) -> Transaction:
+        conn = self.db.connect()
+        cur = conn.execute(
+            """INSERT INTO transactions
+               (customer_id, from_currency_id, to_currency_id,
+                amount_from, amount_to, rate_applied, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (txn.customer_id, txn.from_currency_id, txn.to_currency_id,
+             txn.amount_from, txn.amount_to, txn.rate_applied, txn.status),
+        )
+        conn.commit()
+        txn.transaction_id = cur.lastrowid
+        return txn
 
-    def __init__(self, db):
-        self.db = db
+    def get_all(self) -> List[Transaction]:
+        rows = self.db.connect().execute(
+            "SELECT * FROM transactions ORDER BY transaction_date DESC"
+        ).fetchall()
+        return [Transaction.from_row(r) for r in rows]
 
-    def create(self, transaction: ExchangeTransaction) -> ExchangeTransaction:
-        with self.db.connect() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO exchange_transactions
-                (
-                    customer_id,
-                    rate_id,
-                    source_currency_id,
-                    target_currency_id,
-                    source_amount,
-                    exchange_rate,
-                    target_amount,
-                    transaction_type
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    transaction.customer_id,
-                    transaction.rate_id,
-                    transaction.source_currency_id,
-                    transaction.target_currency_id,
-                    transaction.source_amount,
-                    transaction.exchange_rate,
-                    transaction.target_amount,
-                    transaction.transaction_type,
-                ),
-            )
-            transaction.transaction_id = cursor.lastrowid
-        return transaction
-
-    def find_by_customer(self, customer_id: int):
-        with self.db.connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT *
-                FROM exchange_transactions
-                WHERE customer_id = ?
-                ORDER BY transaction_date DESC
-                """,
-                (customer_id,),
-            ).fetchall()
-        return [ExchangeTransaction(**dict(row)) for row in rows]
+    def get_by_customer(self, customer_id: int) -> List[Transaction]:
+        rows = self.db.connect().execute(
+            "SELECT * FROM transactions WHERE customer_id = ? ORDER BY transaction_date DESC",
+            (customer_id,),
+        ).fetchall()
+        return [Transaction.from_row(r) for r in rows]

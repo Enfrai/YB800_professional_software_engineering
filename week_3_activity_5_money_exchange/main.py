@@ -1,40 +1,50 @@
-from src.database import DatabaseManager
-from src.services import MoneyExchangeService
+"""
+main.py
+-------
+Demo entry point. Run this after seed_data.py to see the OOP layers work
+together: Database -> Repositories -> Service -> Models.
+
+Usage:
+    python seed_data.py
+    python main.py
+"""
+
+from src.database import Database
+from src.repositories import CustomerRepository
+from src.services import ExchangeService
 
 
 def main():
-    """Run a small demonstration of the Money Exchange System."""
-    database = DatabaseManager()
-    database.initialize()
-    database.seed_data()
+    db = Database("money_exchange.db")
+    db.initialize_schema()
 
-    service = MoneyExchangeService(database)
+    customer_repo = CustomerRepository(db)
+    alice = customer_repo.get_by_email("alice@example.com")
 
-    customer = service.create_customer(
-        "John",
-        "Smith",
-        "john.smith@example.com",
-        "+64 21 123 4567",
+    if not alice:
+        print("No seed data found. Run `python seed_data.py` first.")
+        return
+
+    service = ExchangeService(db)
+
+    print(f"Customer: {alice.full_name} ({alice.email})")
+    txn = service.perform_exchange(
+        customer_id=alice.customer_id,
+        from_code="NZD",
+        to_code="USD",
+        amount=500,
+    )
+    print(
+        f"Exchanged {txn.amount_from} NZD -> {txn.amount_to} USD "
+        f"at rate {txn.rate_applied} (txn #{txn.transaction_id})"
     )
 
-    rate = service.add_exchange_rate("USD", "NZD", 1.68)
+    print("\nAll transactions on record:")
+    for t in service.transactions.get_all():
+        print(f"  #{t.transaction_id}: customer {t.customer_id} | "
+              f"{t.amount_from} -> {t.amount_to} @ {t.rate_applied} | {t.transaction_date}")
 
-    transaction = service.record_exchange(
-        customer_id=customer.customer_id,
-        rate_id=rate.rate_id,
-        source_code="USD",
-        target_code="NZD",
-        source_amount=100.00,
-        transaction_type="BUY",
-    )
-
-    print("Money Exchange System")
-    print("---------------------")
-    print(f"Customer: {customer.first_name} {customer.last_name}")
-    print(f"Transaction ID: {transaction.transaction_id}")
-    print(f"Source amount: {transaction.source_amount:.2f} USD")
-    print(f"Exchange rate: {transaction.exchange_rate:.6f}")
-    print(f"Target amount: {transaction.target_amount:.2f} NZD")
+    db.close()
 
 
 if __name__ == "__main__":

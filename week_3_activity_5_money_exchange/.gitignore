@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+money_exchange.db
+.DS_Store

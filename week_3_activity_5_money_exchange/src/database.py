@@ -1,48 +1,107 @@
-from pathlib import Path
+"""
+database.py
+-----------
+Handles the physical connection to the SQLite database and creation of the
+schema (4 tables: customers, currencies, exchange_rates, transactions).
+
+Kept as its own class (encapsulation) so the rest of the application never
+talks SQL directly to the file system - it always goes through Database.
+"""
+
 import sqlite3
+from pathlib import Path
 
 
-class DatabaseManager:
-    """Manage the SQLite database connection and schema."""
+class Database:
+    """Wraps a single SQLite connection and knows how to build the schema."""
 
-    def __init__(self, database_path: str = "data/money_exchange.db"):
-        self.database_path = database_path
-        Path(database_path).parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, db_path: str = "money_exchange.db"):
+        self.db_path = db_path
+        self._conn = None
 
     def connect(self) -> sqlite3.Connection:
-        """Create a configured database connection."""
-        connection = sqlite3.connect(self.database_path)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        return connection
+        if self._conn is None:
+            self._conn = sqlite3.connect(self.db_path)
+            self._conn.execute("PRAGMA foreign_keys = ON;")
+            self._conn.row_factory = sqlite3.Row
+        return self._conn
 
-    def initialize(self) -> None:
-        """Create all required database tables and indexes."""
-        schema_path = Path(__file__).resolve().parent.parent / "schema.sql"
-        schema = schema_path.read_text(encoding="utf-8")
-        with self.connect() as connection:
-            connection.executescript(schema)
+    def close(self):
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
 
-    def seed_data(self) -> None:
-        """Insert initial currencies when the database is empty."""
-        currencies = [
-            ("USD", "US Dollar", "$"),
-            ("NZD", "New Zealand Dollar", "$"),
-            ("EUR", "Euro", "€"),
-            ("AUD", "Australian Dollar", "$"),
-            ("GBP", "British Pound", "£"),
-        ]
+    # Context manager support -> `with Database(...) as db:`
+    def __enter__(self):
+        self.connect()
+        return self
 
-        with self.connect() as connection:
-            count = connection.execute(
-                "SELECT COUNT(*) AS count FROM currencies"
-            ).fetchone()["count"]
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            self._conn.commit()
+        else:
+            self._conn.rollback()
+        self.close()
 
-            if count == 0:
-                connection.executemany(
-                    """
-                    INSERT INTO currencies (code, name, symbol)
-                    VALUES (?, ?, ?)
-                    """,
-                    currencies,
-                )
+    def initialize_schema(self):
+        """Creates all tables if they do not already exist."""
+        conn = self.connect()
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS customers (
+                customer_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name          TEXT NOT NULL,
+                email              TEXT NOT NULL UNIQUE,
+                phone              TEXT,
+                id_document_number TEXT NOT NULL UNIQUE,
+                created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS currencies (
+                currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code        TEXT NOT NULL UNIQUE,   -- ISO 4217, e.g. USD, EUR
+                name        TEXT NOT NULL,          -- e.g. 'US Dollar'
+                symbol      TEXT                    -- e.g. '$'
+            );
+
+            CREATE TABLE IF NOT EXISTS exchange_rates (
+                rate_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_currency_id  INTEGER NOT NULL,
+                to_currency_id    INTEGER NOT NULL,
+                rate              REAL NOT NULL CHECK (rate > 0),
+                effective_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (from_currency_id) REFERENCES currencies(currency_id),
+                FOREIGN KEY (to_currency_id)   REFERENCES currencies(currency_id),
+                UNIQUE (from_currency_id, to_currency_id, effective_date)
+            );
+
+            CREATE TABLE IF NOT EXISTS transactions (
+                transaction_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id       INTEGER NOT NULL,
+                from_currency_id  INTEGER NOT NULL,
+                to_currency_id    INTEGER NOT NULL,
+                amount_from       REAL NOT NULL CHECK (amount_from > 0),
+                amount_to         REAL NOT NULL,
+                rate_applied      REAL NOT NULL,
+                transaction_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status            TEXT DEFAULT 'COMPLETED',
+                FOREIGN KEY (customer_id)      REFERENCES customers(customer_id),
+                FOREIGN KEY (from_currency_id) REFERENCES currencies(currency_id),
+                FOREIGN KEY (to_currency_id)   REFERENCES currencies(currency_id)
+            );
+            """
+        )
+        conn.commit()
+
+    def reset(self):
+        """Drops all tables - useful for tests / re-seeding demos."""
+        conn = self.connect()
+        conn.executescript(
+            """
+            DROP TABLE IF EXISTS transactions;
+            DROP TABLE IF EXISTS exchange_rates;
+            DROP TABLE IF EXISTS currencies;
+            DROP TABLE IF EXISTS customers;
+            """
+        )
+        conn.commit()

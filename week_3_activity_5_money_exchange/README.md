@@ -1,213 +1,131 @@
-# Money Exchange System
+# Money Exchange System — Database Project
 
-## Project Overview
+**Week 3 — Activity 5**
 
-The Money Exchange System is an object-oriented database application for a currency exchange business. It manages customers, currencies, exchange rates, and currency exchange transactions.
-
-The project uses:
-
-- Python 3
-- SQLite
-- Object-oriented programming (OOP)
-- `sqlite3` from the Python standard library
-- `unittest` for automated tests
-- Mermaid for the ER diagram
-
-## Database Design
-
-The database contains **4 tables**:
-
-1. **customers**
-   - Stores customer information.
-   - A separate customer table is necessary because one customer can make many exchange transactions.
-
-2. **currencies**
-   - Stores supported currencies and their ISO 4217 currency codes.
-   - A separate currency table avoids repeating currency names and symbols in every transaction.
-
-3. **exchange_rates**
-   - Stores the exchange rate between a base currency and a target currency at a particular time.
-   - This table is necessary because exchange rates change over time and historical rates are required to preserve the rate used by previous transactions.
-
-4. **exchange_transactions**
-   - Stores each completed currency exchange.
-   - It connects a customer, source currency, target currency, exchange rate, source amount, target amount, and transaction timestamp.
-   - The exchange rate is stored directly in the transaction so that historical transactions remain accurate even after current rates change.
-
-### Relationships
-
-- One customer can have many exchange transactions.
-- One currency can be used in many exchange transactions as a source currency.
-- One currency can be used in many exchange transactions as a target currency.
-- One currency can have many exchange-rate records as a base currency.
-- One currency can have many exchange-rate records as a target currency.
-- Each exchange transaction uses one exchange-rate record.
+A small currency exchange business needs to manage customers, the currencies
+it trades in, the rates it trades at, and the transactions it processes.
+This project designs and implements that database using an
+object-oriented (OOP) application layer in Python on top of SQLite.
 
 ## ER Diagram
 
-```mermaid
-erDiagram
-    CUSTOMERS ||--o{ EXCHANGE_TRANSACTIONS : makes
-    CURRENCIES ||--o{ EXCHANGE_TRANSACTIONS : "source currency"
-    CURRENCIES ||--o{ EXCHANGE_TRANSACTIONS : "target currency"
-    CURRENCIES ||--o{ EXCHANGE_RATES : "base currency"
-    CURRENCIES ||--o{ EXCHANGE_RATES : "target currency"
-    EXCHANGE_RATES ||--o{ EXCHANGE_TRANSACTIONS : "used by"
+![ER Diagram](../images/exchange_er.png)
 
-    CUSTOMERS {
-        INTEGER customer_id PK
-        TEXT first_name
-        TEXT last_name
-        TEXT email UK
-        TEXT phone
-        TEXT created_at
-    }
 
-    CURRENCIES {
-        INTEGER currency_id PK
-        TEXT code UK
-        TEXT name
-        TEXT symbol
-    }
+## Contents
 
-    EXCHANGE_RATES {
-        INTEGER rate_id PK
-        INTEGER base_currency_id FK
-        INTEGER target_currency_id FK
-        REAL rate
-        TEXT effective_at
-    }
+- [`er_diagram.md`](er_diagram.md) — Entity-Relationship diagram (Mermaid)
+- [`src/database.py`](src/database.py) — schema definition + connection manager
+- [`src/models.py`](src/models.py) — OOP entity classes (`Customer`, `Currency`, `ExchangeRate`, `Transaction`)
+- [`src/repositories.py`](src/repositories.py) — one repository class per table (CRUD)
+- [`src/services.py`](src/services.py) — `ExchangeService`, the business-logic layer
+- [`seed_data.py`](seed_data.py) — populates sample data
+- [`main.py`](main.py) — runnable demo
+- [`tests/test_exchange.py`](tests/test_exchange.py) — unit tests
 
-    EXCHANGE_TRANSACTIONS {
-        INTEGER transaction_id PK
-        INTEGER customer_id FK
-        INTEGER rate_id FK
-        INTEGER source_currency_id FK
-        INTEGER target_currency_id FK
-        REAL source_amount
-        REAL exchange_rate
-        REAL target_amount
-        TEXT transaction_type
-        TEXT transaction_date
-    }
-```
+## How many tables, and why
 
-## OOP Design
+The database has **4 tables**. The brief asked for at least three; a fourth
+(`exchange_rates`) was added because folding rates into another table would
+either duplicate data or make historical rates impossible to track — both
+violate basic normalization.
 
-The application is organized around classes:
+### 1. `customers`
+Stores the people who bring in money to exchange: name, email, phone, and an
+ID document number (required for KYC/compliance in real exchange
+businesses). This table is necessary because a transaction must always be
+traceable back to the person who made it, and customer details (contact
+info, ID) shouldn't be repeated on every transaction row — that would be
+duplicated, error-prone data. Keeping customers separate also lets the
+business look up a person's full exchange history in one query.
 
-- `DatabaseManager` handles SQLite connections, schema creation, and seed data.
-- `Customer` represents a customer.
-- `Currency` represents a supported currency.
-- `ExchangeRate` represents an exchange rate.
-- `ExchangeTransaction` represents a completed exchange.
-- `CustomerRepository` manages customer persistence.
-- `CurrencyRepository` manages currency persistence.
-- `ExchangeRateRepository` manages exchange-rate persistence.
-- `ExchangeTransactionRepository` manages transaction persistence.
-- `MoneyExchangeService` contains the business logic for creating customers, managing rates, calculating exchanges, and recording transactions.
+### 2. `currencies`
+Stores each currency the business trades in (ISO code, name, symbol —
+e.g. `USD`, `US Dollar`, `$`). This table is necessary because currencies
+are referenced from two different places (`exchange_rates` and
+`transactions`), each potentially twice (a "from" side and a "to" side). If
+currency names were typed out as plain text every time, a typo like `usd`
+vs `USD` would silently create a data-integrity bug. A dedicated table
+with a foreign key guarantees every reference points to a real, consistently
+spelled currency.
 
-This separation keeps database operations and business rules independent and demonstrates OOP principles such as encapsulation, abstraction, and separation of responsibilities.
+### 3. `exchange_rates`
+Stores the rate for converting one currency to another, with a timestamp
+(`effective_date`). This table is necessary because exchange rates change
+constantly and the business needs a *history* of rates, not just the
+current one — for auditing, reporting, and recalculating past transactions.
+Storing the rate directly on the customer or currency table would only
+allow one rate to exist at a time and would lose that history.
 
-## Project Structure
+### 4. `transactions`
+Stores each actual exchange event: which customer, which currency was sold
+and which was bought, how much, at what rate, and when. This is the
+"transaction" the whole system exists to record. It's necessary as its own
+table because it's the many-to-many meeting point of customers and
+currencies — one customer can have many transactions, and one currency can
+appear in many transactions (on either side) — and each transaction needs
+its own timestamp, amount, and status, which don't belong to any other
+entity.
 
-```text
-money_exchange_system/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── schema.sql
-├── main.py
-├── data/
-│   └── .gitkeep
-├── docs/
-│   └── er_diagram.md
-├── src/
-│   ├── __init__.py
-│   ├── database.py
-│   ├── models.py
-│   ├── repositories.py
-│   └── services.py
-└── tests/
-    ├── __init__.py
-    └── test_money_exchange.py
-```
+## Why this counts as OOP, not just a script
 
-## How to Run
+- **Encapsulation** — each table has a matching class (`Customer`,
+  `Currency`, `ExchangeRate`, `Transaction`) that owns its own data and
+  validation (e.g. `Transaction` calculates `amount_to` itself and rejects
+  a non-positive amount in `__post_init__`).
+- **Separation of concerns** — `Database` only knows about connections and
+  schema; `repositories.py` only knows SQL; `services.py` only knows
+  business rules (`ExchangeService.perform_exchange`); `models.py` only
+  knows what a row *is*. Nothing outside `repositories.py` writes raw SQL.
+- **Abstraction** — `BaseRepository` defines the interface every repository
+  must implement, so each concrete repository (`CustomerRepository`,
+  `CurrencyRepository`, etc.) is interchangeable at that interface level.
+- **Composition** — `ExchangeService` is composed of four repositories
+  rather than inheriting from them, and coordinates them to perform one
+  real-world action.
 
-### 1. Create a virtual environment
+## Entity-Relationship diagram
+
+See [`er_diagram.md`](er_diagram.md) for the full Mermaid ER diagram
+(renders automatically on GitHub). Summary of relationships:
+
+- One **customer** can make many **transactions** (1:N)
+- One **currency** can be the "from" or "to" side of many **exchange rates** (1:N, twice)
+- One **currency** can be the "from" or "to" side of many **transactions** (1:N, twice)
+
+## How to run it
+
+Requires Python 3.9+ (standard library only — no dependencies to install).
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
+git clone <your-repo-url>
+cd money-exchange-db
 
-On Windows:
+# 1. Create the schema and load sample data
+python seed_data.py
 
-```powershell
-.venv\Scripts\activate
-```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-The project currently uses only the Python standard library, so `requirements.txt` is intentionally empty.
-
-### 3. Run the application
-
-```bash
+# 2. Run the demo (performs a sample exchange and lists all transactions)
 python main.py
+
+# 3. Run the unit tests
+python -m unittest tests/test_exchange.py -v
 ```
 
-The application creates `data/money_exchange.db` automatically.
+Example output from `main.py`:
 
-### 4. Run tests
+```
+Customer: Alice Nguyen (alice@example.com)
+Exchanged 500 NZD -> 300.0 USD at rate 0.6 (txn #1)
 
-```bash
-python -m unittest discover -s tests -v
+All transactions on record:
+  #1: customer 1 | 500.0 -> 300.0 @ 0.6 | 2026-08-28 05:49:11
 ```
 
-## Example Business Flow
+## Notes
 
-1. Create a customer.
-2. Add supported currencies such as USD, NZD, EUR, and AUD.
-3. Add an exchange rate.
-4. Request an exchange calculation.
-5. Record the completed transaction.
-6. Query the customer's transaction history.
-
-## Data Integrity
-
-The database uses:
-
-- Primary keys for entity identification.
-- Foreign keys for relationships.
-- Unique constraints for customer email and currency code.
-- Check constraints for positive monetary amounts and exchange rates.
-- ISO-style three-letter currency codes.
-- Stored transaction exchange rates to preserve historical accuracy.
-
-## Example
-
-If a customer exchanges 100 USD into NZD at a rate of 1.68:
-
-```text
-Source amount: 100.00 USD
-Exchange rate: 1.680000
-Target amount: 168.00 NZD
-```
-
-The transaction stores `1.68` as the exchange rate used at the time of the transaction, even if the current USD/NZD rate later changes.
-
-## GitHub
-
-After creating the repository, push this project to GitHub and add the repository URL here.
-
-Example:
-
-```text
-https://github.com/<your-username>/money-exchange-system
-```
+- Uses SQLite for simplicity and portability (no server setup needed to run
+  or mark this assignment); the schema in `src/database.py` uses standard
+  SQL and would need only minor syntax changes to run on MySQL/PostgreSQL
+  (e.g. `AUTOINCREMENT` → `AUTO_INCREMENT`/`SERIAL`).
+- Sample exchange rates in `seed_data.py` are illustrative, not live market
+  data.
