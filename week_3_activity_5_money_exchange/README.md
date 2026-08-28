@@ -1,5 +1,10 @@
 # Money Exchange System — Database Project
 
+```
+- Week 3 — Activity 5
+- Week 4 — Activity 1.1
+```
+
 **Week 3 — Activity 5**
 
 A small currency exchange business needs to manage customers, the currencies
@@ -14,6 +19,7 @@ object-oriented (OOP) application layer in Python on top of SQLite.
 
 ## Contents
 
+- [`docs/use_case_diagram.md`](docs/use_case_diagram.md) — Use case diagram (Week 4 — Activity 1.1)
 - [`er_diagram.md`](er_diagram.md) — Entity-Relationship diagram (Mermaid)
 - [`src/database.py`](src/database.py) — schema definition + connection manager
 - [`src/models.py`](src/models.py) — OOP entity classes (`Customer`, `Currency`, `ExchangeRate`, `Transaction`)
@@ -129,3 +135,8 @@ All transactions on record:
   (e.g. `AUTOINCREMENT` → `AUTO_INCREMENT`/`SERIAL`).
 - Sample exchange rates in `seed_data.py` are illustrative, not live market
   data.
+
+
+**Week 4 — Activity 1.1**
+
+- [Use case diagram](docs/use_case_diagram.md) 
