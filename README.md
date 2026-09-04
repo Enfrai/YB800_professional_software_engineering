@@ -65,3 +65,20 @@ Shuohui Liu (Michael) @YooBee learning
     How many students are registered in each course?
     List the names and student IDs of students who have enrolled in more than one course.
     ```
+
+
+- [Week 5 - Activity 2: Merging Dictionaries with Conditions](./week_5_activity_2_merging_dict.py)
+    ```
+    Use the following lists as keys and values. Generate a dictionary output by selecting the key–value pairs where the value is an odd number.
+    Key1:[a, b, c, d, f, g, h, e, a]
+    Value1:[20, 3, 1, 88, 55, 92, 6, 90, 910]
+    Key2:[u, b, o, x,  e, a]
+    Value2:[200, 30, 10, 88, 55, 920]
+    Share your code and the resulting output here with description.
+    ```
+
+
+- [Week 5 - Activity 3: Matrix data structure](./week_5_activity_3_oop_matrix.py)
+    ```
+    Develop a Python OOP project that accepts two matrices as 2D lists and multiplies them together (e.g., M1 size: 3*5 - M2 size: 5*2). Share your complete code here.
+    ```
