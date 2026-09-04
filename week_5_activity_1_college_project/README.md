@@ -13,4 +13,17 @@
 
 - **Courses**: Maintain course details (ID, title, credits) and track assigned lecturers and enrolled students.
 
-[Draw.io Link](https://yoobeestudent-team-e08zm265.atlassian.net/wiki/pages/resumedraft.action?draftId=1146881&draftShareId=1a339e56-4c7c-46ab-b045-d27d40cbf855)
+#### Use Case Diagram
+
+![use case diagram](./images/use_case.png)
+
+#### Activity Diagram
+
+![activity digram](./images/activity_diagram.png)
+
+#### Class Diagram
+
+![class diagram](./images/class_diagram.png)
+
+
+#### [Draw.io Link](https://yoobeestudent-team-e08zm265.atlassian.net/wiki/pages/resumedraft.action?draftId=1146881&draftShareId=1a339e56-4c7c-46ab-b045-d27d40cbf855)

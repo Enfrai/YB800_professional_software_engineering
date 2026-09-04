@@ -66,6 +66,11 @@ Shuohui Liu (Michael) @YooBee learning
     List the names and student IDs of students who have enrolled in more than one course.
     ```
 
+- [Week 5 - Activity 1: College project](./week_5_activity_1_college_project/)
+    ```
+    Develop a Use Case Diagram, Activity Diagram, and Class Diagram for a simple college management project involving lecturers, students, and courses.
+    The scope of the project should be limited to these three areas. Once completed, upload your diagrams along with a brief description of your design to GitHub and share the GitHub repository link.
+    ```
 
 - [Week 5 - Activity 2: Merging Dictionaries with Conditions](./week_5_activity_2_merging_dict.py)
     ```
