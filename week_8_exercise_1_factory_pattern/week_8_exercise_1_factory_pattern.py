@@ -62,12 +62,69 @@ class PushFactory(NotificationFactory):
 
 #######################################################
 
+
+
+#######################################################
+
+class Button(ABC):
+    @abstractmethod
+    def draw(self):
+        pass
+
+class Checkbox(ABC):
+    @abstractmethod
+    def draw(self):
+        pass
+
+class WindowsButton(Button):
+    def draw(self):
+        print('A windows button drawn.')
+
+class WindowsCheckbox(Checkbox):
+    def draw(self):
+        print('A windows checkbox drawn.')
+
+class MacButton(Button):
+    def draw(self):
+        print('A mac button drawn.')
+
+class MacCheckbox(Checkbox):
+    def draw(self):
+        print('A mac checkbox drawn.')
+
+
+class GUIFactory(ABC):
+    @abstractmethod
+    def create_button(self):
+        pass
+
+    @abstractmethod
+    def create_checkbox(self):
+        pass
+
+class WindowsFactory(GUIFactory):
+    def create_button(self):
+        return WindowsButton()
+
+    def create_checkbox(self):
+        return WindowsCheckbox()
+
+class MacFactory(GUIFactory):
+    def create_checkbox(self):
+        return MacCheckbox()
+
+    def create_button(self):
+        return MacButton()
+
+#######################################################
+
 def main():
     order = OrderFactory().create("pizza")
     order.prepare()
 
-    push = SMSFactory()
-    push.create_notification().notify()
+    SMSFactory().create_notification().notify()
+
+    MacFactory().create_button().draw()
 
 
 if __name__ == '__main__':
