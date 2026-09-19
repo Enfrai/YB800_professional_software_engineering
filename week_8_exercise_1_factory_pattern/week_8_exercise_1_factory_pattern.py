@@ -21,7 +21,7 @@ class OrderFactory:
         elif order == 'pasta':
             return Pasta()
 
-def main(xx):
+def main():
     order = OrderFactory().create("pizza")
     order.prepare()
 
