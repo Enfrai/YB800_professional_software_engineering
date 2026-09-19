@@ -25,6 +25,10 @@ class OrderFactory:
 
 #######################################################
 
+
+
+#######################################################
+
 class NotificationMethod(ABC):
     @abstractmethod
     def notify(self):
@@ -115,6 +119,10 @@ class MacFactory(GUIFactory):
 
     def create_button(self):
         return MacButton()
+
+#######################################################
+
+
 
 #######################################################
 
